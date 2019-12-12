@@ -154,6 +154,50 @@ void Paf::set_str(Tag t, std::string v) {
     str_tags_.emplace_back(t, v);
 }
 
+Fast5Loader::Fast5Loader(std::string fast5_list_fname, u32 max_load, std::string read_filter_fname) 
+    : total_loaded_ (0),
+      max_load_ (max_load) {
+
+    std::ifstream list_file(fast5_list_fname);
+    std::string s;
+    while (getline(list_file, s)) {
+        fast5_list_.push_back(s);
+    }
+    
+    if (!read_filter_fname.empty()) {
+        std::ifstream filter_file(read_filter_fname);
+        while (getline(filter_file, s)) {
+            filter_.insert(read);
+        }
+    }
+
+    file_.open(fast5_list_.pop_front());
+
+    bool raw_found = false;
+    for (const std::string &s : file.list_group("/")) {
+        if (s == "Raw") raw_found = True;
+    }
+    fmt_ = raw_found ? Format::SINGLE : Format::MULTI;
+
+
+}
+
+ReadBuffer Fast5Loader::pop_read() {
+
+}
+
+u32 Fast5Loader::loaded_size() {
+
+}
+
+u32 Fast5Loader::load_reads(u32 n) {
+    if (fmt_ == Format::SINGLE) {
+
+    } else {
+
+    }
+}
+
 bool should_load(const hdf5_tools::File &file, std::string read) {
     bool within_time = true;
     if (PARAMS.sim_st != 0 || PARAMS.sim_en != 0) {
@@ -184,10 +228,6 @@ bool should_load(const hdf5_tools::File &file, std::string read) {
 }
 
 bool is_multi_fast5(const hdf5_tools::File &file) {
-    for (const std::string &s : file.list_group("/")) {
-        if (s == "Raw") return false;
-    }
-    return true;
 }
 
 u32 load_multi_fast5(const hdf5_tools::File &file, 

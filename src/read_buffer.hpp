@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 #include <unordered_set>
+#include <climits>
 #include "fast5/hdf5_tools.hpp"
 #include "util.hpp"
 #include "chunk.hpp"
@@ -82,7 +83,6 @@ class ReadBuffer {
 
     enum Source {MULTI, SINGLE, BULK, LIVE};
 
-
     ReadBuffer();
     ReadBuffer(const ReadBuffer &read);
     ReadBuffer(const std::string &filename);
@@ -116,6 +116,7 @@ class ReadBuffer {
                                 const std::vector<float> &pa_ranges);
     static float sampling_rate;
     static std::vector<float> cal_offsets_, cal_coefs_;
+    static std::unordered_map<std::string> parsed_reads_;
 
     Source source_;
     u16 channel_idx_;
@@ -131,15 +132,28 @@ class ReadBuffer {
     friend bool operator< (const ReadBuffer &r1, const ReadBuffer &r2);
 };
 
+class Fast5Loader {
+    Fast5Loader(std::string fast5_list_fname, u32 max_load, std::string read_filter_fname="");
+
+    ReadBuffer pop_read();
+    u32 loaded_size();
+    u32 load_reads(u32 n=UINT_MAX);
+
+    private:
+    u32 load_single_fast5s(u32 n=UINT_MAX);
+    u32 load_multi_fast5s(u32 n=UINT_MAX);
+
+    enum Format {MULTI, SINGLE, UNKNOWN};
+
+    Format fmt_;
+    hdf5_tools::File fast5_,
+    std::deque<std::string> fast5_list_, file_reads_;
+    std::unordered_set<std::string> filter_;
+    std::deque<ReadBuffer> loaded_reads_;
+    u32 max_load_, total_loaded_;
+}
+
 bool operator< (const ReadBuffer &r1, const ReadBuffer &r2);
 
-std::deque<std::string> load_fast5s(const std::string &fast5_list, std::deque<ReadBuffer> &list, u32 max_load = 0, std::unordered_set<std::string> filter=std::unordered_set<std::string>());
-
-u32 load_fast5s(std::deque<std::string> &fast5_list, 
-                std::deque<ReadBuffer> &list, 
-                u32 max_load = 0, 
-                std::unordered_set<std::string> filter=std::unordered_set<std::string>());
-
-u32 load_multi_fast5(const hdf5_tools::File &file, std::deque<ReadBuffer> &list, u32 max_load = 0);
 
 #endif
